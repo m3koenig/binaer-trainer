@@ -1,39 +1,79 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useReducer } from 'react';
 import { Lightbulb, Calculator, Trophy, RefreshCcw, Info, ArrowRight, Star, Smile, Gamepad2, Settings, Brain, CheckCircle, PenTool, AlertCircle, Menu } from 'lucide-react';
 
 export default function App() {
+  // Reducer for batching related state updates
+  const gameReducer = (state, action) => {
+    switch (action.type) {
+      case 'RESET_ROUND':
+        return { ...state, bits: new Array(action.payload).fill(false), score: 0, feedback: null };
+      case 'RESET_BITS':
+        return { ...state, bits: new Array(action.payload).fill(false) };
+      case 'RESET_FEEDBACK':
+        return { ...state, feedback: null };
+      case 'SET_TARGET':
+        return { ...state, targetNumber: action.payload };
+      case 'SET_BITS':
+        return { ...state, bits: action.payload };
+      case 'SET_FEEDBACK':
+        return { ...state, feedback: action.payload };
+      case 'SET_SCORE':
+        return { ...state, score: action.payload };
+      default:
+        return state;
+    }
+  };
+
+  const initialGameState = {
+    bits: new Array(4).fill(false),
+    targetNumber: 0,
+    score: 0,
+    feedback: null,
+  };
+
   // Anzahl der Lichter (Bits) - Standardmäßig 4
   const [numBits, setNumBits] = useState(4);
   const [difficulty, setDifficulty] = useState('normal'); // 'normal' (Lichter) oder 'hard' (Binärcode schreiben)
-  
-  // Zustand für die Bits
-  const [bits, setBits] = useState(new Array(4).fill(false));
   const [mode, setMode] = useState('explore'); // 'explore' oder 'quiz'
-  const [targetNumber, setTargetNumber] = useState(0);
-  const [score, setScore] = useState(0);
-  const [feedback, setFeedback] = useState(null); // 'success', 'error' oder null
   const [showExplanation, setShowExplanation] = useState(true);
+  const [gameState, dispatch] = useReducer(gameReducer, initialGameState);
+
+  const startNewRound = useCallback((bitsCount) => {
+    const maxVal = Math.pow(2, bitsCount) - 1;
+    const randomNum = Math.floor(Math.random() * maxVal) + 1;
+    dispatch({ type: 'SET_TARGET', payload: randomNum });
+    dispatch({ type: 'RESET_BITS', payload: bitsCount });
+    dispatch({ type: 'RESET_FEEDBACK' });
+  }, []);
 
   // Wenn sich numBits ändert, Reset
   useEffect(() => {
-    setBits(new Array(numBits).fill(false));
-    setScore(0);
-    setFeedback(null);
-    if (mode === 'quiz') {
-      setTimeout(() => startNewRound(numBits), 0);
-    }
+    dispatch({ type: 'SET_SCORE', payload: 0 });
+    dispatch({ type: 'RESET_FEEDBACK' });
+    dispatch({ type: 'RESET_BITS', payload: numBits });
   }, [numBits]);
+
+  useEffect(() => {
+    if (mode === 'quiz') {
+      startNewRound(numBits);
+    }
+  }, [numBits, mode, startNewRound]);
 
   // Wenn Schwierigkeit geändert wird, Reset im Quiz
   useEffect(() => {
     if (mode === 'quiz') {
-      setFeedback(null);
-      setBits(new Array(numBits).fill(false));
+      dispatch({ type: 'RESET_FEEDBACK' });
     }
-  }, [difficulty]);
+  }, [difficulty, mode]);
+
+  useEffect(() => {
+    if (mode === 'quiz') {
+      dispatch({ type: 'RESET_BITS', payload: numBits });
+    }
+  }, [difficulty, numBits, mode]);
 
   // Berechnet den aktuellen Wert
-  const currentDecimal = bits.reduce((acc, isActive, index) => {
+  const currentDecimal = gameState.bits.reduce((acc, isActive, index) => {
     const power = (numBits - 1) - index;
     const value = Math.pow(2, power);
     return isActive ? acc + value : acc;
@@ -41,54 +81,44 @@ export default function App() {
 
   // Bit umschalten
   const toggleBit = (index) => {
-    const newBits = [...bits];
+    const newBits = [...gameState.bits];
     newBits[index] = !newBits[index];
-    setBits(newBits);
+    dispatch({ type: 'SET_BITS', payload: newBits });
     
     // Feedback zurücksetzen bei Interaktion
-    if (feedback === 'error' || feedback === 'success') {
-      setFeedback(null);
+    if (gameState.feedback === 'error' || gameState.feedback === 'success') {
+      dispatch({ type: 'RESET_FEEDBACK' });
     }
-  };
-
-  const startNewRound = (bitsCount = numBits) => {
-    const maxVal = Math.pow(2, bitsCount) - 1;
-    const randomNum = Math.floor(Math.random() * maxVal) + 1;
-    setTargetNumber(randomNum);
-    setBits(new Array(bitsCount).fill(false));
-    setFeedback(null);
   };
 
   const switchMode = (newMode) => {
     setMode(newMode);
-    setBits(new Array(numBits).fill(false));
-    setFeedback(null);
+    dispatch({ type: 'RESET_BITS', payload: numBits });
+    dispatch({ type: 'RESET_FEEDBACK' });
     if (newMode === 'quiz') {
       startNewRound(numBits);
-      setScore(0);
+      dispatch({ type: 'SET_SCORE', payload: 0 });
     }
   };
 
   // Antwort prüfen (Automatisch im Normal-Modus, Manuell im Hard-Modus)
   useEffect(() => {
-    if (mode === 'quiz' && difficulty === 'normal') {
-      if (currentDecimal === targetNumber) {
-        setFeedback('success');
-      }
+    if (mode === 'quiz' && difficulty === 'normal' && currentDecimal === gameState.targetNumber && gameState.feedback === null) {
+      dispatch({ type: 'SET_FEEDBACK', payload: 'success' });
     }
-  }, [currentDecimal, targetNumber, mode, difficulty]);
+  }, [currentDecimal, gameState.targetNumber, mode, difficulty, gameState.feedback]);
 
   // Manuelle Prüfung für den Profi-Modus
   const checkAnswer = () => {
-    if (currentDecimal === targetNumber) {
-      setFeedback('success');
+    if (currentDecimal === gameState.targetNumber) {
+      dispatch({ type: 'SET_FEEDBACK', payload: 'success' });
     } else {
-      setFeedback('error');
+      dispatch({ type: 'SET_FEEDBACK', payload: 'error' });
     }
   };
 
   const handleNextLevel = () => {
-    setScore(score + 1);
+    dispatch({ type: 'SET_SCORE', payload: gameState.score + 1 });
     startNewRound(numBits);
   };
 
@@ -199,7 +229,7 @@ export default function App() {
                  {/* Zielzahl */}
                 <div className={`text-center px-4 py-2 md:px-8 md:py-4 rounded-xl border-2 ${difficulty === 'hard' ? 'bg-slate-900 border-slate-700' : 'bg-indigo-50 border-indigo-100'}`}>
                   <span className={`text-[10px] md:text-xs font-bold uppercase tracking-wider ${difficulty === 'hard' ? 'text-slate-400' : 'text-indigo-400'}`}>Ziel</span>
-                  <div className={`text-3xl md:text-5xl font-black mt-1 ${difficulty === 'hard' ? 'text-emerald-400' : 'text-indigo-600'}`}>{targetNumber}</div>
+                  <div className={`text-3xl md:text-5xl font-black mt-1 ${difficulty === 'hard' ? 'text-emerald-400' : 'text-indigo-600'}`}>{gameState.targetNumber}</div>
                 </div>
 
                 {/* Punkte */}
@@ -207,13 +237,13 @@ export default function App() {
                   <span className={`text-[10px] md:text-xs font-bold uppercase tracking-wider flex items-center gap-1 justify-center ${difficulty === 'hard' ? 'text-yellow-600' : 'text-yellow-600'}`}>
                     <Star size={10} fill="currentColor" /> Punkte
                   </span>
-                  <div className="text-2xl md:text-3xl font-black text-yellow-500 mt-1">{score}</div>
+                  <div className="text-2xl md:text-3xl font-black text-yellow-500 mt-1">{gameState.score}</div>
                 </div>
               </div>
               
               {/* Feedback Area */}
               <div className="w-full flex justify-center min-h-[60px]">
-                {feedback === 'success' ? (
+                {gameState.feedback === 'success' ? (
                   <div className="flex flex-col items-center animate-bounce">
                     <span className="text-green-500 font-black text-lg md:text-2xl flex items-center gap-2 text-center">
                       <Smile size={24} /> {difficulty === 'hard' ? 'Geknackt!' : 'Richtig!'}
@@ -230,7 +260,7 @@ export default function App() {
                     {difficulty === 'hard' ? (
                       <div className="flex flex-col items-center gap-2">
                          <div className="text-2xl md:text-4xl font-mono text-slate-600 font-bold tracking-widest">? ? ?</div>
-                         {feedback === 'error' && (
+                         {gameState.feedback === 'error' && (
                            <span className="text-red-400 font-bold text-sm flex items-center gap-2 animate-pulse">
                              <AlertCircle size={14} /> Falsch!
                            </span>
@@ -246,11 +276,11 @@ export default function App() {
                       <>
                         <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Aktuell</span>
                         <div className={`text-3xl md:text-4xl font-black transition-colors ${
-                          currentDecimal > targetNumber ? 'text-red-400' : 'text-orange-400'
+                          currentDecimal > gameState.targetNumber ? 'text-red-400' : 'text-orange-400'
                         }`}>
                           {currentDecimal}
                         </div>
-                        {currentDecimal > targetNumber && (
+                        {currentDecimal > gameState.targetNumber && (
                           <span className="text-red-400 text-xs font-bold block mt-1">Zu viel!</span>
                         )}
                       </>
@@ -264,7 +294,7 @@ export default function App() {
 
         {/* Die Boxen Grid - Mobile Optimized */}
         <div className={`grid ${numBits > 4 ? 'grid-cols-4 sm:grid-cols-4 md:grid-cols-8' : 'grid-cols-4'} gap-2 md:gap-4 mb-6 md:mb-8`}>
-          {bits.map((isActive, index) => {
+          {gameState.bits.map((isActive, index) => {
             const power = (numBits - 1) - index;
             const value = Math.pow(2, power);
             const isHard = difficulty === 'hard' && mode === 'quiz';
@@ -310,14 +340,12 @@ export default function App() {
                             className={`w-full h-full transition-colors duration-300 ${isActive ? 'text-orange-600 fill-yellow-400' : 'text-slate-400'}`} 
                             strokeWidth={1.5}
                             />
-                            <span className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 font-black tracking-tighter select-none ${isActive ? 'text-orange-900' : 'text-slate-500'} text-xs md:text-xl`}>
+                            {/* Light Bulb Value */}
+                            <span className={`absolute top-1/2 left-1/2 -translate-x-1/2 translate-y-[-90%] font-black tracking-tighter select-none ${isActive ? 'text-orange-900' : 'text-slate-500'} text-xs md:text-xl`}>
                             {value}
                             </span>
                         </div>
                       </div>
-                      <span className={`text-[10px] md:text-sm font-black tracking-wide ${isActive ? 'text-orange-800' : 'text-slate-300'}`}>
-                        {isActive ? 'AN' : 'AUS'}
-                      </span>
                     </>
                   )}
                 </button>
@@ -338,7 +366,7 @@ export default function App() {
                 </div>
                 
                 <div className="flex flex-wrap items-center gap-2 text-lg md:text-xl font-mono font-bold">
-                  {bits.map((isActive, index) => {
+                  {gameState.bits.map((isActive, index) => {
                     const value = Math.pow(2, (numBits - 1) - index);
                     if (!isActive && !showExplanation) return null;
                     
@@ -362,7 +390,7 @@ export default function App() {
             </div>
             
             <div className="mt-6 flex justify-center gap-2 md:gap-4">
-               <button onClick={() => setBits(new Array(numBits).fill(false))} className="text-slate-500 hover:text-indigo-600 bg-slate-100 hover:bg-indigo-50 px-3 py-2 md:px-4 rounded-lg md:rounded-xl font-bold text-xs md:text-sm transition-colors flex items-center gap-2">
+               <button onClick={() => dispatch({ type: 'RESET_BITS', payload: numBits })} className="text-slate-500 hover:text-indigo-600 bg-slate-100 hover:bg-indigo-50 px-3 py-2 md:px-4 rounded-lg md:rounded-xl font-bold text-xs md:text-sm transition-colors flex items-center gap-2">
                 <RefreshCcw size={14} /> Reset
               </button>
               <button onClick={() => setShowExplanation(!showExplanation)} className="text-slate-500 hover:text-indigo-600 bg-slate-100 hover:bg-indigo-50 px-3 py-2 md:px-4 rounded-lg md:rounded-xl font-bold text-xs md:text-sm transition-colors flex items-center gap-2">

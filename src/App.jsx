@@ -193,28 +193,30 @@ export default function App() {
             </div>
 
             {/* Schwierigkeitsgrad Switch */}
-            <div className={`flex w-full md:w-auto justify-center p-1 rounded-xl border ${difficulty === 'hard' && mode === 'quiz' ? 'bg-slate-900 border-slate-700' : 'bg-indigo-50 border-indigo-100'}`}>
-               <button
-                onClick={() => setDifficulty('normal')}
-                className={`flex-1 md:flex-none px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide flex items-center justify-center gap-2 transition-all ${
-                  difficulty === 'normal'
-                    ? 'bg-white text-indigo-600 shadow-sm'
-                    : 'text-slate-400 hover:text-slate-500'
-                }`}
-              >
-                <Lightbulb size={14} /> Einfach
-              </button>
-              <button
-                onClick={() => setDifficulty('hard')}
-                className={`flex-1 md:flex-none px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide flex items-center justify-center gap-2 transition-all ${
-                  difficulty === 'hard'
-                    ? 'bg-emerald-500 text-white shadow-sm'
-                    : 'text-slate-400 hover:text-slate-500'
-                }`}
-              >
-                <Brain size={14} /> Profi
-              </button>
-            </div>
+            {mode === 'quiz' && (
+              <div className={`flex w-full md:w-auto justify-center p-1 rounded-xl border ${difficulty === 'hard' && mode === 'quiz' ? 'bg-slate-900 border-slate-700' : 'bg-indigo-50 border-indigo-100'}`}>
+                 <button
+                  onClick={() => setDifficulty('normal')}
+                  className={`flex-1 md:flex-none px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide flex items-center justify-center gap-2 transition-all ${
+                    difficulty === 'normal'
+                      ? 'bg-white text-indigo-600 shadow-sm'
+                      : 'text-slate-400 hover:text-slate-500'
+                  }`}
+                >
+                  <Lightbulb size={14} /> Einfach
+                </button>
+                <button
+                  onClick={() => setDifficulty('hard')}
+                  className={`flex-1 md:flex-none px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide flex items-center justify-center gap-2 transition-all ${
+                    difficulty === 'hard'
+                      ? 'bg-emerald-500 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-slate-500'
+                  }`}
+                >
+                  <Brain size={14} /> Profi
+                </button>
+              </div>
+            )}
           </div>
         </header>
 

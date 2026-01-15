@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useReducer } from 'react';
-import { Lightbulb, Calculator, Trophy, RefreshCcw, Info, ArrowRight, Star, Smile, Gamepad2, Settings, Brain, CheckCircle, PenTool, AlertCircle, Menu } from 'lucide-react';
+import { Lightbulb, LightbulbOff,Calculator, Trophy, RefreshCcw, Info, ArrowRight, Star, Smile, Gamepad2, Settings, Brain, CheckCircle, PenTool, AlertCircle, Menu } from 'lucide-react';
 
 export default function App() {
   // Reducer for batching related state updates
@@ -336,10 +336,7 @@ export default function App() {
                       <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transition-all duration-300 flex items-center justify-center ${isActive ? 'scale-110' : 'scale-90 opacity-40'}`}>
                         {/* Responsive SVG Size via CSS classes inside wrapper not perfectly easy, simpler to conditional render or just use standard small size that fits mobile */}
                         <div className="w-8 h-8 md:w-16 md:h-16 flex items-center justify-center relative">
-                            <Lightbulb 
-                            className={`w-full h-full transition-colors duration-300 ${isActive ? 'text-orange-600 fill-yellow-400' : 'text-slate-400'}`} 
-                            strokeWidth={1.5}
-                            />
+                            {isActive ? <Lightbulb className={`w-full h-full transition-colors duration-300 ${isActive ? 'text-orange-600 fill-yellow-400' : 'text-slate-400'}`} strokeWidth={1.5} /> : <LightbulbOff className={`w-full h-full transition-colors duration-300 ${isActive ? 'text-orange-600 fill-yellow-400' : 'text-slate-400'}`} strokeWidth={1.5} />}
                             {/* Light Bulb Value */}
                             <span className={`absolute top-1/2 left-1/2 -translate-x-1/2 translate-y-[-90%] font-black tracking-tighter select-none ${isActive ? 'text-orange-900' : 'text-slate-500'} text-xs md:text-xl`}>
                             {value}

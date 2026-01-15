@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useReducer } from 'react';
-import { Lightbulb, LightbulbOff,Calculator, Trophy, RefreshCcw, Info, ArrowRight, Star, Smile, Gamepad2, Settings, Brain, CheckCircle, PenTool, AlertCircle, Menu } from 'lucide-react';
+import { Lightbulb, LightbulbOff, GraduationCap, Calculator, Trophy, RefreshCcw, Info, ArrowRight, Star, Smile, Gamepad2, Settings, Brain, CheckCircle, PenTool, AlertCircle, Menu } from 'lucide-react';
 
 export default function App() {
   // Reducer for batching related state updates
@@ -152,7 +152,7 @@ export default function App() {
                     : 'text-slate-400 hover:text-slate-600'
                 }`}
               >
-                <Lightbulb size={16} /> Labor
+                <GraduationCap size={16} /> 
               </button>
               <button
                 onClick={() => switchMode('quiz')}
@@ -162,7 +162,7 @@ export default function App() {
                     : 'text-slate-400 hover:text-slate-600'
                 }`}
               >
-                <Gamepad2 size={16} /> Spiel
+                <Gamepad2 size={16} /> 
               </button>
             </div>
           </div>
@@ -203,7 +203,7 @@ export default function App() {
                       : 'text-slate-400 hover:text-slate-500'
                   }`}
                 >
-                  <Lightbulb size={14} /> Einfach
+                  <Star size={14} /> 
                 </button>
                 <button
                   onClick={() => setDifficulty('hard')}
@@ -213,7 +213,7 @@ export default function App() {
                       : 'text-slate-400 hover:text-slate-500'
                   }`}
                 >
-                  <Brain size={14} /> Profi
+                  <Star size={14} /><Star size={14} />
                 </button>
               </div>
             )}
